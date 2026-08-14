@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Boutique — AURA-HIJAB</title><link rel="stylesheet" href="css/style.css"></head>
+<body><div id="header"></div>
+<section class="page"><div class="eyebrow">AURA-HIJAB</div><h1>Boutique</h1><p>Découvrez tous nos foulards au prix de 2 500 DA.</p></section>
+<main class="container"><section class="section">
+<div class="shop-tools">
+  <div class="search-box">
+    <span>⌕</span>
+    <input id="productSearch" type="search" placeholder="Rechercher un foulard..." autocomplete="off">
+    <button id="clearSearch" type="button" aria-label="Effacer la recherche">×</button>
+  </div>
+  <div class="sort-box">
+    <label for="sortProducts">Trier par</label>
+    <select id="sortProducts">
+      <option value="default">Pertinence</option>
+      <option value="price-asc">Prix : moins cher → plus cher</option>
+      <option value="price-desc">Prix : plus cher → moins cher</option>
+      <option value="name-asc">Nom : A → Z</option>
+      <option value="name-desc">Nom : Z → A</option>
+    </select>
+  </div>
+</div>
+<div class="filters">
+<button class="filter active" data-cat="Tous">Tous</button><button class="filter" data-cat="Jersey">Jersey</button>
+<button class="filter" data-cat="Soie">Soie</button><button class="filter" data-cat="Coton">Coton</button>
+<button class="filter" data-cat="Satin">Satin</button><button class="filter" data-cat="Imprimés">Imprimés</button>
+</div>
+<div class="shop-result-bar"><span id="resultCount"></span><button id="resetShop" type="button">Réinitialiser les filtres</button></div>
+<div class="grid" id="products"></div>
+<div id="noResults" class="empty shop-empty" hidden>Aucun produit ne correspond à votre recherche.<br><button class="btn" id="resetEmpty">Afficher tous les produits</button></div>
+</section></main>
+<div id="footer"></div>
+<script src="js/data.js"></script><script src="js/app.js"></script>
+<script>
+let activeCat="Tous", searchTerm="", sortMode="default";
+const productsEl=document.getElementById("products");
+const searchEl=document.getElementById("productSearch");
+const sortEl=document.getElementById("sortProducts");
+
+function renderShop(){
+  let list=PRODUCTS.filter(p=>
+    (activeCat==="Tous" || p.category===activeCat) &&
+    ((p.name+" "+p.category+" "+p.description).toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+  if(sortMode==="price-asc") list.sort((a,b)=>a.price-b.price);
+  if(sortMode==="price-desc") list.sort((a,b)=>b.price-a.price);
+  if(sortMode==="name-asc") list.sort((a,b)=>a.name.localeCompare(b.name,"fr"));
+  if(sortMode==="name-desc") list.sort((a,b)=>b.name.localeCompare(a.name,"fr"));
+
+  document.getElementById("resultCount").textContent =
+    list.length+" produit"+(list.length>1?"s":"")+" trouvé"+(list.length>1?"s":"");
+  productsEl.innerHTML=list.map(card).join("");
+  document.getElementById("noResults").hidden=!!list.length;
+  productsEl.style.display=list.length?"grid":"none";
+}
+document.querySelectorAll(".filter").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));
+  b.classList.add("active"); activeCat=b.dataset.cat; renderShop();
+}));
+searchEl.addEventListener("input",()=>{searchTerm=searchEl.value.trim();renderShop()});
+sortEl.addEventListener("change",()=>{sortMode=sortEl.value;renderShop()});
+document.getElementById("clearSearch").onclick=()=>{searchEl.value="";searchTerm="";searchEl.focus();renderShop()};
+function resetShop(){activeCat="Tous";searchTerm="";sortMode="default";searchEl.value="";sortEl.value="default";document.querySelectorAll(".filter").forEach(x=>x.classList.remove("active"));document.querySelector('.filter[data-cat="Tous"]').classList.add("active");renderShop()}
+document.getElementById("resetShop").onclick=resetShop;
+document.getElementById("resetEmpty").onclick=resetShop;
+renderShop();
+</script></body></html>

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Commander — AURA-HIJAB</title><link rel="stylesheet" href="css/style.css"></head>
+<body><div id="header"></div>
+
+<section class="page"><div class="eyebrow">AURA-HIJAB</div><h1>Finaliser ma commande</h1>
+<p>Remplissez vos informations. Votre commande sera préparée avec soin.</p></section>
+
+<main class="container">
+<section class="two" style="align-items:start">
+<div class="box">
+<div class="eyebrow">INFORMATIONS CLIENT</div>
+<h2>Vos coordonnées</h2>
+<form id="orderForm" class="order-form">
+<div class="form-grid">
+<label>Nom
+<input id="nom" required autocomplete="family-name" placeholder="Votre nom"></label>
+<label>Prénom
+<input id="prenom" required autocomplete="given-name" placeholder="Votre prénom"></label>
+</div>
+<label>Numéro de téléphone
+<input id="telephone" required type="tel" inputmode="tel" pattern="[0-9+ ]{9,15}" placeholder="0667 32 69 78"></label>
+<label>Wilaya
+<select id="wilaya" required><option value="">Choisir votre wilaya</option></select></label>
+<label>Mode de livraison
+<select id="deliveryType" required><option value="domicile">🚚 Livraison à domicile</option><option value="bureau">📦 Livraison au bureau</option></select></label>
+<label>Adresse de livraison
+<textarea id="adresse" required placeholder="Adresse complète de livraison"></textarea></label>
+<label>Commune
+<input id="commune" required placeholder="Votre commune"></label>
+<div class="secure-note">🔒 Paiement à la livraison · Vos informations servent uniquement à traiter votre commande.</div>
+<button class="btn buy-final" type="submit">Acheter maintenant</button>
+</form>
+</div>
+
+<aside class="box order-summary">
+<div class="eyebrow">MA COMMANDE</div><h2>Résumé</h2>
+<div id="orderItems"></div>
+<div class="row"><span>Sous-total</span><b id="subtotal">0 DA</b></div>
+<div class="row"><span>Livraison</span><b id="shipping">Choisissez une wilaya</b></div>
+<div class="row total-row"><b>Total à payer</b><b id="total">0 DA</b></div>
+<p class="small-note">Le prix de livraison est calculé selon votre wilaya et votre mode de livraison.</p>
+</aside>
+</section>
+</main>
+
+<div id="success" class="success-overlay" hidden>
+<div class="success-card"><div class="success-icon">✓</div><h2>Commande confirmée !</h2>
+<p>Merci pour votre commande AURA-HIJAB.</p><div id="successDetails"></div>
+<a class="btn" href="index.html">Retour à l'accueil</a></div></div>
+
+<div id="footer"></div>
+<script src="js/data.js"></script><script src="js/delivery.js"></script><script src="js/app.js"></script>
+<script>
+function money(n){return new Intl.NumberFormat("fr-FR").format(n)+" DA"}
+function getCart(){return JSON.parse(localStorage.getItem("aura_cart")||"[]")}
+function renderOrder(){
+ const c=getCart(), items=document.getElementById("orderItems");
+ if(!c.length){items.innerHTML='<div class="empty">Votre panier est vide.<br><a class="btn" href="boutique.html">Voir la boutique</a></div>';document.querySelector(".buy-final").disabled=true;return;}
+ let sub=0;
+ items.innerHTML=c.map(x=>{const p=PRODUCTS.find(a=>a.id==x.id);sub+=p.price*x.q;return `<div class="order-item"><div><b>${p.name}</b><small>${x.q} × ${money(p.price)}</small></div><strong>${money(p.price*x.q)}</strong></div>`}).join("");
+ document.getElementById("subtotal").textContent=money(sub);
+ updateTotal();
+}
+function updateTotal(){
+ const wilaya=document.getElementById("wilaya").value,c=getCart();
+ const sub=c.reduce((s,x)=>{const p=PRODUCTS.find(a=>a.id==x.id);return s+p.price*x.q},0);
+ if(!wilaya){document.getElementById("shipping").textContent="Choisissez une wilaya";document.getElementById("total").textContent=money(sub);return;}
+ const type=document.getElementById("deliveryType").value;const d=deliveryPrice(wilaya,type);document.getElementById("shipping").textContent=money(d);document.getElementById("total").textContent=money(sub+d);
+}
+Object.entries(getDeliveryPrices()).forEach(([w,price])=>{const o=document.createElement("option");o.value=w;o.textContent=w;document.getElementById("wilaya").appendChild(o)});
+document.getElementById("wilaya").addEventListener("change",updateTotal);document.getElementById("deliveryType").addEventListener("change",updateTotal);
+document.getElementById("orderForm").addEventListener("submit",e=>{
+ e.preventDefault();const c=getCart(),w=document.getElementById("wilaya").value;
+ if(!c.length||!w)return;
+ const type=document.getElementById("deliveryType").value;const sub=c.reduce((s,x)=>{const p=PRODUCTS.find(a=>a.id==x.id);return s+p.price*x.q},0),d=deliveryPrice(w,type),total=sub+d;
+ const order={id:"AH-"+Date.now().toString().slice(-8),date:new Date().toLocaleString("fr-FR"),nom:nom.value,prenom:prenom.value,telephone:telephone.value,wilaya:w,deliveryType:type,deliveryTypeLabel:type==="bureau"?"Bureau":"Domicile",commune:commune.value,adresse:adresse.value,items:c,subtotal:sub,delivery:d,total};
+ const orders=JSON.parse(localStorage.getItem("aura_orders")||"[]");orders.push(order);localStorage.setItem("aura_orders",JSON.stringify(orders));localStorage.removeItem("aura_cart");
+ document.getElementById("successDetails").innerHTML=`<p><b>N° de commande :</b> ${order.id}</p><p><b>Total :</b> ${money(total)}</p><p><b>Livraison :</b> ${w} · ${type==="bureau"?"Bureau":"Domicile"} · ${money(d)}</p><p>Notre équipe vous contactera au <b>${telephone.value}</b> pour confirmer la livraison.</p>`;
+ document.getElementById("success").hidden=false;updateCount();
+});
+renderOrder();
+</script>
+</body></html>

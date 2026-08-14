@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /gestion-aura-9x7k.php
+Disallow: /admin.html
+Disallow: /admin-dashboard.html
+Disallow: /admin-config.php
+Disallow: /setup-admin.php

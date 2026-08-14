@@ -1,0 +1,82 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Dashboard — AURA-HIJAB PRO</title><link rel="stylesheet" href="css/style.css"></head><body><div id="header"></div>
+<main class="dashboard"><div class="dash-wrap">
+  <aside class="dash-side"><div class="dash-brand">AURA-HIJAB <small>BACK OFFICE</small></div><a class="dash-nav active" href="#catalogue">📦 Catalogue</a><a class="dash-nav" href="#commandes">🧾 Commandes</a><a class="dash-nav" href="#livraison">🚚 Livraison</a><a class="dash-nav" href="#sauvegarde">💾 Sauvegarde</a><a class="dash-nav" href="boutique.html">↗ Voir la boutique</a><a class="dash-nav" href="#" id="logoutAdmin">⎋ Déconnexion</a></aside>
+  <section class="dash-main">
+    <div class="dash-top"><div><div class="eyebrow">ESPACE ADMINISTRATEUR</div><h1>Dashboard</h1><p>Gérez votre boutique sans modifier le code.</p></div><button class="dash-primary" onclick="openEditor()">＋ Ajouter un produit</button></div>
+    <div class="stats"><div class="stat"><span>Produits</span><strong id="statProducts">0</strong></div><div class="stat"><span>Valeur catalogue</span><strong id="statValue">0 DA</strong></div><div class="stat"><span>Commandes</span><strong id="statOrders">0</strong></div><div class="stat"><span>Panier moyen</span><strong id="statAverage">0 DA</strong></div></div>
+
+    <section id="catalogue" class="dash-card"><div class="dash-head"><div><h2>Catalogue produits</h2><p>Modifiez le nom, le prix, la catégorie, le stock, la description et la photo.</p></div><input id="searchProducts" class="dash-search" placeholder="Rechercher un produit…"></div><div class="product-admin-grid" id="productGrid"></div></section>
+
+    <section id="commandes" class="dash-card"><div class="dash-head"><div><h2>Commandes reçues</h2><p>Les commandes enregistrées sur ce navigateur.</p></div><button class="dash-light" onclick="clearOrders()">Effacer les commandes</button></div><div class="table-scroll"><table class="dash-table"><thead><tr><th>N°</th><th>Date</th><th>Client</th><th>Wilaya</th><th>Téléphone</th><th>Total</th><th></th></tr></thead><tbody id="ordersTable"></tbody></table></div></section>
+
+    <section id="livraison" class="dash-card"><div class="dash-head"><div><h2>Tarifs de livraison</h2><p>Définissez séparément le tarif au bureau et le tarif à domicile pour chaque wilaya.</p></div><button class="dash-primary" onclick="saveDeliveryUI()">Enregistrer les tarifs</button></div><div class="delivery-grid delivery-grid-head"><div>Wilaya</div><div>📦 Bureau (DA)</div><div>🚚 Domicile (DA)</div></div><div class="delivery-grid" id="deliveryGrid"></div></section>
+
+    <section id="sauvegarde" class="dash-card"><div class="dash-head"><div><h2>Sauvegarde du catalogue</h2><p>Exportez vos produits pour les conserver ou les transférer sur un autre navigateur.</p></div></div><div class="backup-actions"><button class="dash-primary" onclick="exportCatalog()">⬇ Exporter le catalogue</button><label class="dash-light file-btn">⬆ Importer un catalogue<input type="file" id="importCatalog" accept="application/json"></label><button class="dash-danger" onclick="resetCatalog()">Réinitialiser le catalogue</button></div><div class="admin-warning">⚠️ Cette version est un back-office <b>local</b> : les modifications sont enregistrées dans le navigateur avec lequel vous administrez le site. Pour synchroniser les changements avec tous les clients d'un site hébergé, il faudra connecter la boutique à une base de données/backend.</div></section>
+  </section>
+
+<div class="admin-social box" style="margin-top:25px">
+  <div class="eyebrow">RÉSEAUX SOCIAUX</div>
+  <h2>Liens des réseaux sociaux</h2>
+  <p class="admin-muted">Ajoutez les liens complets de vos comptes. Ils seront affichés automatiquement dans la page Contact.</p>
+  <form id="socialForm">
+    <div class="social-admin-grid">
+      <label>Instagram<input id="socialInstagram" type="url" placeholder="https://instagram.com/..."></label>
+      <label>Facebook<input id="socialFacebook" type="url" placeholder="https://facebook.com/..."></label>
+      <label>TikTok<input id="socialTiktok" type="url" placeholder="https://tiktok.com/@..."></label>
+      <label>Snapchat<input id="socialSnapchat" type="url" placeholder="https://snapchat.com/add/..."></label>
+    </div>
+    <button class="btn" type="submit">Enregistrer les réseaux</button>
+    <span id="socialSaved" class="social-saved"></span>
+  </form>
+</div>
+</div></main>
+<div id="footer"></div>
+<div class="editor-overlay" id="editorOverlay" hidden><div class="editor-modal"><button class="modal-close" onclick="closeEditor()">×</button><div class="eyebrow">GESTION PRODUIT</div><h2 id="editorTitle">Ajouter un produit</h2><form id="productForm"><input type="hidden" id="editId"><div class="editor-layout"><div><div class="image-upload"><img id="previewImage" src="" alt="Aperçu"><label class="upload-btn">Choisir une photo<input id="imageFile" type="file" accept="image/*"></label><small>JPG/PNG/WebP · image optimisée automatiquement</small></div></div><div><label>Nom du produit<input id="pName" required placeholder="Ex. Hijab Velours Bordeaux"></label><div class="form-grid"><label>Prix (DA)<input id="pPrice" required type="number" min="0" step="50"></label><label>Stock<input id="pStock" required type="number" min="0"></label></div><label>Catégorie<input id="pCategory" required list="categories" placeholder="Jersey, Soie…"><datalist id="categories"><option>Jersey</option><option>Soie</option><option>Coton</option><option>Satin</option><option>Imprimés</option></datalist></label><label>Description<textarea id="pDescription" placeholder="Description du produit"></textarea></label><div class="editor-actions"><button type="button" class="dash-light" onclick="closeEditor()">Annuler</button><button type="submit" class="dash-primary">Enregistrer le produit</button></div></div></div></form></div></div>
+<script>document.addEventListener('click',e=>{if(e.target.id==='logoutAdmin'){e.preventDefault();fetch('/api/admin-logout').finally(()=>location.href='/gestion-aura-9x7k.html')}});</script><script src="js/data.js"></script><script src="js/delivery.js"></script><script src="js/app.js"></script><script>
+let selectedImage='';
+const $=id=>document.getElementById(id);
+const products=()=>getProducts();
+function renderDashboard(){const ps=products(),orders=JSON.parse(localStorage.getItem('aura_orders')||'[]');$('statProducts').textContent=ps.length;$('statValue').textContent=money(ps.reduce((s,p)=>s+Number(p.price||0)*Number(p.stock||0),0));$('statOrders').textContent=orders.length;$('statAverage').textContent=money(orders.length?orders.reduce((s,o)=>s+Number(o.total||0),0)/orders.length:0);renderProducts();renderOrders();renderDelivery();}
+function renderProducts(){const q=($('searchProducts').value||'').toLowerCase();const ps=products().filter(p=>(p.name+' '+p.category).toLowerCase().includes(q));$('productGrid').innerHTML=ps.length?ps.map(p=>`<article class="admin-product"><div class="admin-product-img"><img src="${esc(p.image)}" alt="${esc(p.name)}"></div><div class="admin-product-body"><div class="admin-product-meta"><span>${esc(p.category)}</span><b>${money(p.price)}</b></div><h3>${esc(p.name)}</h3><p>Stock : ${Number(p.stock)||0}</p><div class="admin-product-actions"><button class="dash-light" onclick="openEditor(${p.id})">Modifier</button><button class="dash-danger" onclick="deleteProduct(${p.id})">Supprimer</button></div></div></article>`).join(''):'<div class="empty">Aucun produit trouvé.</div>'}
+function openEditor(id){selectedImage='';const p=id?products().find(x=>x.id===Number(id)):null;$('editorOverlay').hidden=false;$('editorTitle').textContent=p?'Modifier le produit':'Ajouter un produit';$('editId').value=p?p.id:'';$('pName').value=p?p.name:'';$('pPrice').value=p?p.price:2500;$('pStock').value=p?p.stock:20;$('pCategory').value=p?p.category:'Jersey';$('pDescription').value=p?p.description:'';$('previewImage').src=p?p.image:'';$('imageFile').value='';selectedImage=p?p.image:''}
+function closeEditor(){$('editorOverlay').hidden=true}
+$('imageFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const max=1000,scale=Math.min(1,max/img.width,max/img.height),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);selectedImage=c.toDataURL('image/jpeg',.82);$('previewImage').src=selectedImage};img.src=ev.target.result};r.readAsDataURL(f)});
+$('productForm').addEventListener('submit',e=>{e.preventDefault();let ps=products();const id=$('editId').value;const obj={id:id?Number(id):Date.now(),name:$('pName').value.trim(),price:Number($('pPrice').value),stock:Number($('pStock').value),category:$('pCategory').value.trim(),description:$('pDescription').value.trim()||'Foulard AURA-HIJAB élégant et confortable.',image:selectedImage||'assets/products/hijab-10.jpg'};if(id){ps=ps.map(p=>p.id===Number(id)?obj:p)}else ps.push(obj);saveProducts(ps);closeEditor();renderDashboard();alert('Produit enregistré avec succès.');});
+function deleteProduct(id){const p=products().find(x=>x.id===Number(id));if(!p||!confirm('Supprimer « '+p.name+' » ?'))return;saveProducts(products().filter(x=>x.id!==Number(id)));renderDashboard()}
+function renderOrders(){const os=JSON.parse(localStorage.getItem('aura_orders')||'[]');$('ordersTable').innerHTML=os.length?os.slice().reverse().map(o=>`<tr><td><b>${esc(o.id)}</b></td><td>${esc(o.date||'')}</td><td>${esc(o.prenom)} ${esc(o.nom)}</td><td>${esc(o.wilaya)}</td><td>${esc(o.telephone)}</td><td><b>${money(o.total)}</b></td><td><button class="icon-btn" title="Supprimer" onclick="deleteOrder('${esc(o.id)}')">🗑</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-cell">Aucune commande.</td></tr>'}
+function deleteOrder(id){let os=JSON.parse(localStorage.getItem('aura_orders')||'[]').filter(o=>o.id!==id);localStorage.setItem('aura_orders',JSON.stringify(os));renderDashboard()}
+function clearOrders(){if(confirm('Effacer toutes les commandes enregistrées ?')){localStorage.removeItem('aura_orders');renderDashboard()}}
+function renderDelivery(){const d=getDeliveryPrices();$('deliveryGrid').innerHTML=Object.entries(d).map(([w,v])=>`<div class="delivery-row"><strong>${esc(w)}</strong><input class="delivery-input" data-w="${esc(w)}" data-type="bureau" type="number" min="0" step="50" value="${Number(v.bureau)||0}"><input class="delivery-input" data-w="${esc(w)}" data-type="domicile" type="number" min="0" step="50" value="${Number(v.domicile)||0}"></div>`).join('')}
+function saveDeliveryUI(){const d={};document.querySelectorAll('.delivery-input').forEach(i=>{d[i.dataset.w]??={};d[i.dataset.w][i.dataset.type]=Number(i.value)||0});saveDeliveryPrices(d);alert('Tarifs bureau et domicile enregistrés.');}
+function exportCatalog(){const data={products:getProducts(),delivery:getDeliveryPrices(),exportedAt:new Date().toISOString()};const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='aura-hijab-catalogue.json';a.click();URL.revokeObjectURL(a.href)}
+$('importCatalog').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!Array.isArray(d.products))throw Error();saveProducts(d.products);if(d.delivery)saveDeliveryPrices(d.delivery);renderDashboard();alert('Catalogue importé avec succès.')}catch(err){alert('Fichier de catalogue invalide.')}};r.readAsText(f);e.target.value=''})
+function resetCatalog(){if(!confirm('Réinitialiser tous les produits aux 12 produits d’origine ?'))return;resetProducts();renderDashboard()}
+$('searchProducts').addEventListener('input',renderProducts);$('editorOverlay').addEventListener('click',e=>{if(e.target.id==='editorOverlay')closeEditor()});renderDashboard();
+</script>
+<script src="js/social.js"></script>
+<script>
+(function(){
+  const s=getSocials();
+  socialInstagram.value=s.instagram||"";
+  socialFacebook.value=s.facebook||"";
+  socialTiktok.value=s.tiktok||"";
+  socialSnapchat.value=s.snapchat||"";
+  document.getElementById("socialForm").addEventListener("submit",function(e){
+    e.preventDefault();
+    const next={
+      instagram:socialInstagram.value.trim(),
+      facebook:socialFacebook.value.trim(),
+      tiktok:socialTiktok.value.trim(),
+      snapchat:socialSnapchat.value.trim()
+    };
+    if(!Object.values(next).every(validSocialUrl)){
+      alert("Veuillez saisir uniquement des liens URL valides commençant par https:// ou http://.");
+      return;
+    }
+    saveSocials(next);
+    socialSaved.textContent="✓ Liens enregistrés";
+    setTimeout(()=>socialSaved.textContent="",2500);
+  });
+})();
+</script>
+</body></html>
