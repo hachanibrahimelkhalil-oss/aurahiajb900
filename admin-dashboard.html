@@ -32,18 +32,88 @@
 </div></main>
 <div id="footer"></div>
 <div class="editor-overlay" id="editorOverlay" hidden><div class="editor-modal"><button class="modal-close" onclick="closeEditor()">×</button><div class="eyebrow">GESTION PRODUIT</div><h2 id="editorTitle">Ajouter un produit</h2><form id="productForm"><input type="hidden" id="editId"><div class="editor-layout"><div><div class="image-upload"><img id="previewImage" src="" alt="Aperçu"><label class="upload-btn">Choisir une photo<input id="imageFile" type="file" accept="image/*"></label><small>JPG/PNG/WebP · image optimisée automatiquement</small></div></div><div><label>Nom du produit<input id="pName" required placeholder="Ex. Hijab Velours Bordeaux"></label><div class="form-grid"><label>Prix (DA)<input id="pPrice" required type="number" min="0" step="50"></label><label>Stock<input id="pStock" required type="number" min="0"></label></div><label>Catégorie<input id="pCategory" required list="categories" placeholder="Jersey, Soie…"><datalist id="categories"><option>Jersey</option><option>Soie</option><option>Coton</option><option>Satin</option><option>Imprimés</option></datalist></label><label>Description<textarea id="pDescription" placeholder="Description du produit"></textarea></label><div class="editor-actions"><button type="button" class="dash-light" onclick="closeEditor()">Annuler</button><button type="submit" class="dash-primary">Enregistrer le produit</button></div></div></div></form></div></div>
-<script>document.addEventListener('click',e=>{if(e.target.id==='logoutAdmin'){e.preventDefault();fetch('/api/admin-logout').finally(()=>location.href='/gestion-aura-9x7k.html')}});</script><script src="js/data.js"></script><script src="js/delivery.js"></script><script src="js/app.js"></script><script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://hcrhvjrngydrhapqgwhx.supabase.co",
+  "sb_publishable_mgYWE1C5TC2s2ovdhH4GQQ_TP5eCu_q"
+);
+</script>
+  <script>document.addEventListener('click',e=>{if(e.target.id==='logoutAdmin'){e.preventDefault();fetch('/api/admin-logout').finally(()=>location.href='/gestion-aura-9x7k.html')}});</script><script src="js/data.js"></script><script src="js/delivery.js"></script><script src="js/app.js"></script><script>
 let selectedImage='';
 const $=id=>document.getElementById(id);
 const products=()=>getProducts();
-function renderDashboard(){const ps=products(),orders=JSON.parse(localStorage.getItem('aura_orders')||'[]');$('statProducts').textContent=ps.length;$('statValue').textContent=money(ps.reduce((s,p)=>s+Number(p.price||0)*Number(p.stock||0),0));$('statOrders').textContent=orders.length;$('statAverage').textContent=money(orders.length?orders.reduce((s,o)=>s+Number(o.total||0),0)/orders.length:0);renderProducts();renderOrders();renderDelivery();}
+async function renderDashboard(){
+
+  const ps = products();
+
+  $('statProducts').textContent = ps.length;
+
+  $('statValue').textContent = money(
+    ps.reduce(
+      (s,p) => s + Number(p.price || 0) * Number(p.stock || 0),
+      0
+    )
+  );
+
+  const { data: orders, error } = await supabaseClient
+    .from("orders")
+    .select("total");
+
+  if(error){
+    console.error("Erreur Supabase :", error);
+    $('statOrders').textContent = "0";
+    $('statAverage').textContent = money(0);
+  } else {
+    $('statOrders').textContent = orders.length;
+    $('statAverage').textContent = money(
+      orders.length
+        ? orders.reduce((s,o) => s + Number(o.total || 0), 0) / orders.length
+        : 0
+    );
+  }
+
+  renderProducts();
+  renderOrders();
+  renderDelivery();
+}
 function renderProducts(){const q=($('searchProducts').value||'').toLowerCase();const ps=products().filter(p=>(p.name+' '+p.category).toLowerCase().includes(q));$('productGrid').innerHTML=ps.length?ps.map(p=>`<article class="admin-product"><div class="admin-product-img"><img src="${esc(p.image)}" alt="${esc(p.name)}"></div><div class="admin-product-body"><div class="admin-product-meta"><span>${esc(p.category)}</span><b>${money(p.price)}</b></div><h3>${esc(p.name)}</h3><p>Stock : ${Number(p.stock)||0}</p><div class="admin-product-actions"><button class="dash-light" onclick="openEditor(${p.id})">Modifier</button><button class="dash-danger" onclick="deleteProduct(${p.id})">Supprimer</button></div></div></article>`).join(''):'<div class="empty">Aucun produit trouvé.</div>'}
 function openEditor(id){selectedImage='';const p=id?products().find(x=>x.id===Number(id)):null;$('editorOverlay').hidden=false;$('editorTitle').textContent=p?'Modifier le produit':'Ajouter un produit';$('editId').value=p?p.id:'';$('pName').value=p?p.name:'';$('pPrice').value=p?p.price:2500;$('pStock').value=p?p.stock:20;$('pCategory').value=p?p.category:'Jersey';$('pDescription').value=p?p.description:'';$('previewImage').src=p?p.image:'';$('imageFile').value='';selectedImage=p?p.image:''}
 function closeEditor(){$('editorOverlay').hidden=true}
 $('imageFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{const img=new Image();img.onload=()=>{const max=1000,scale=Math.min(1,max/img.width,max/img.height),c=document.createElement('canvas');c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);selectedImage=c.toDataURL('image/jpeg',.82);$('previewImage').src=selectedImage};img.src=ev.target.result};r.readAsDataURL(f)});
 $('productForm').addEventListener('submit',e=>{e.preventDefault();let ps=products();const id=$('editId').value;const obj={id:id?Number(id):Date.now(),name:$('pName').value.trim(),price:Number($('pPrice').value),stock:Number($('pStock').value),category:$('pCategory').value.trim(),description:$('pDescription').value.trim()||'Foulard AURA-HIJAB élégant et confortable.',image:selectedImage||'assets/products/hijab-10.jpg'};if(id){ps=ps.map(p=>p.id===Number(id)?obj:p)}else ps.push(obj);saveProducts(ps);closeEditor();renderDashboard();alert('Produit enregistré avec succès.');});
 function deleteProduct(id){const p=products().find(x=>x.id===Number(id));if(!p||!confirm('Supprimer « '+p.name+' » ?'))return;saveProducts(products().filter(x=>x.id!==Number(id)));renderDashboard()}
-function renderOrders(){const os=JSON.parse(localStorage.getItem('aura_orders')||'[]');$('ordersTable').innerHTML=os.length?os.slice().reverse().map(o=>`<tr><td><b>${esc(o.id)}</b></td><td>${esc(o.date||'')}</td><td>${esc(o.prenom)} ${esc(o.nom)}</td><td>${esc(o.wilaya)}</td><td>${esc(o.telephone)}</td><td><b>${money(o.total)}</b></td><td><button class="icon-btn" title="Supprimer" onclick="deleteOrder('${esc(o.id)}')">🗑</button></td></tr>`).join(''):'<tr><td colspan="7" class="empty-cell">Aucune commande.</td></tr>'}
+async function renderOrders(){
+
+  const { data: os, error } = await supabaseClient
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if(error){
+    console.error("Erreur Supabase :", error);
+
+    $('ordersTable').innerHTML =
+      '<tr><td colspan="7" class="empty-cell">Erreur de chargement des commandes.</td></tr>';
+
+    return;
+  }
+
+  $('ordersTable').innerHTML = os.length
+    ? os.map(o => `
+      <tr>
+        <td><b>AH-${String(o.id).padStart(8,"0")}</b></td>
+        <td>${esc(o.created_at || '')}</td>
+        <td>${esc(o.customer_name || '')}</td>
+        <td>${esc(o.wilaya || '')}</td>
+        <td>${esc(o.phone || '')}</td>
+        <td><b>${money(o.total || 0)}</b></td>
+        <td></td>
+      </tr>
+    `).join('')
+    : '<tr><td colspan="7" class="empty-cell">Aucune commande.</td></tr>';
+}
 function deleteOrder(id){let os=JSON.parse(localStorage.getItem('aura_orders')||'[]').filter(o=>o.id!==id);localStorage.setItem('aura_orders',JSON.stringify(os));renderDashboard()}
 function clearOrders(){if(confirm('Effacer toutes les commandes enregistrées ?')){localStorage.removeItem('aura_orders');renderDashboard()}}
 function renderDelivery(){const d=getDeliveryPrices();$('deliveryGrid').innerHTML=Object.entries(d).map(([w,v])=>`<div class="delivery-row"><strong>${esc(w)}</strong><input class="delivery-input" data-w="${esc(w)}" data-type="bureau" type="number" min="0" step="50" value="${Number(v.bureau)||0}"><input class="delivery-input" data-w="${esc(w)}" data-type="domicile" type="number" min="0" step="50" value="${Number(v.domicile)||0}"></div>`).join('')}
