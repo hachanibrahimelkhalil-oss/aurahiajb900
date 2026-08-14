@@ -50,6 +50,15 @@
 <a class="btn" href="index.html">Retour à l'accueil</a></div></div>
 
 <div id="footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+const supabaseClient = window.supabase.createClient(
+  "https://hcrhvjrngydrhapqgwhx.supabase.co",
+  "sb_publishable_mgYWE1C5TC2s2ovdhH4GQQ_TP5eCu_q"
+);
+</script>
+
 <script src="js/data.js"></script><script src="js/delivery.js"></script><script src="js/app.js"></script>
 <script>
 function money(n){return new Intl.NumberFormat("fr-FR").format(n)+" DA"}
@@ -70,12 +79,44 @@ function updateTotal(){
 }
 Object.entries(getDeliveryPrices()).forEach(([w,price])=>{const o=document.createElement("option");o.value=w;o.textContent=w;document.getElementById("wilaya").appendChild(o)});
 document.getElementById("wilaya").addEventListener("change",updateTotal);document.getElementById("deliveryType").addEventListener("change",updateTotal);
-document.getElementById("orderForm").addEventListener("submit",e=>{
+document.getElementById("orderForm").addEventListener("submit",async e=>{
  e.preventDefault();const c=getCart(),w=document.getElementById("wilaya").value;
  if(!c.length||!w)return;
  const type=document.getElementById("deliveryType").value;const sub=c.reduce((s,x)=>{const p=PRODUCTS.find(a=>a.id==x.id);return s+p.price*x.q},0),d=deliveryPrice(w,type),total=sub+d;
  const order={id:"AH-"+Date.now().toString().slice(-8),date:new Date().toLocaleString("fr-FR"),nom:nom.value,prenom:prenom.value,telephone:telephone.value,wilaya:w,deliveryType:type,deliveryTypeLabel:type==="bureau"?"Bureau":"Domicile",commune:commune.value,adresse:adresse.value,items:c,subtotal:sub,delivery:d,total};
- const orders=JSON.parse(localStorage.getItem("aura_orders")||"[]");orders.push(order);localStorage.setItem("aura_orders",JSON.stringify(orders));localStorage.removeItem("aura_cart");
+const { data, error } = await supabaseClient
+  .from("orders")
+  .insert([{
+    customer_name:
+      document.getElementById("nom").value + " " +
+      document.getElementById("prenom").value,
+
+    phone:
+      document.getElementById("telephone").value,
+
+    wilaya: w,
+
+    address:
+      document.getElementById("adresse").value +
+      " — " +
+      document.getElementById("commune").value,
+
+    delivery_method: type,
+
+    items: c,
+
+    total: total,
+
+    status: "Nouvelle"
+  }])
+  .select()
+  .single();
+
+if (error) {
+  console.error(error);
+  alert("Erreur d'enregistrement : " + error.message);
+  return;
+}
  document.getElementById("successDetails").innerHTML=`<p><b>N° de commande :</b> ${order.id}</p><p><b>Total :</b> ${money(total)}</p><p><b>Livraison :</b> ${w} · ${type==="bureau"?"Bureau":"Domicile"} · ${money(d)}</p><p>Notre équipe vous contactera au <b>${telephone.value}</b> pour confirmer la livraison.</p>`;
  document.getElementById("success").hidden=false;updateCount();
 });
